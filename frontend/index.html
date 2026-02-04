@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>SonicStream - Premium Video to MP3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+  <!-- SweetAlert2 for Premium Alerts -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root {
+      --primary: #6366f1;
+      --secondary: #a855f7;
+      --accent: #ec4899;
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --text: #f3f4f6;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Outfit', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    /* Ambient Background Glow */
+    .glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      animation: pulse 10s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 0.5;
+      }
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 500px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      transform: translateY(0);
+      transition: transform 0.3s ease;
+    }
+
+    h1 {
+      font-weight: 600;
+      margin-bottom: 8px;
+      background: linear-gradient(to right, var(--primary), var(--secondary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 2.5rem;
+    }
+
+    p {
+      color: #94a3b8;
+      margin-bottom: 32px;
+      font-weight: 300;
+      font-size: 1.1rem;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: rgba(0, 0, 0, 0.2);
+      color: white;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+    }
+
+    button {
+      width: 100%;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      padding: 16px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      background: #334155;
+    }
+
+    .status-msg {
+      margin-top: 20px;
+      min-height: 24px;
+      font-size: 0.95rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .status-msg.visible {
+      opacity: 1;
+    }
+
+    .success {
+      color: #4ade80;
+    }
+
+    .error {
+      color: #f87171;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .btn-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Footer / Disclaimer */
+    .footer {
+      margin-top: 40px;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="glow"></div>
+
+  <div class="container">
+    <h1>SonicStream</h1>
+    <p>YouTube & Facebook videos to MP3 Instantly.</p>
+
+    <div class="input-group">
+      <input id="url" type="text" placeholder="Paste video link here..." autocomplete="off">
+    </div>
+
+    <button id="btn-download">
+      <div class="btn-content">
+        <span class="spinner" id="spinner"></span>
+        <span id="btn-text">Download MP3</span>
+      </div>
+    </button>
+
+    <div id="status" class="status-msg"></div>
+
+    <div class="footer">
+      Pure Direct Download • No Server Storage • High Quality
+    </div>
+  </div>
+
+  <script>
+    const API = "http://127.0.0.1:8000";
+    const btn = document.getElementById("btn-download");
+    const input = document.getElementById("url");
+    const status = document.getElementById("status");
+    const spinner = document.getElementById("spinner");
+    const btnText = document.getElementById("btn-text");
+
+    function showStatus(msg, type) {
+      status.textContent = msg;
+      status.className = `status-msg visible ${type}`;
+    }
+
+    function resetStatus() {
+      status.className = "status-msg";
+    }
+
+    btn.onclick = async () => {
+      const urlVal = input.value.trim();
+      if (!urlVal) {
+        showStatus("Please paste a valid video URL.", "error");
+        input.focus();
+        return;
+      }
+
+      // Reset UI
+      resetStatus();
+      btn.disabled = true;
+      spinner.style.display = "inline-block";
+      btnText.textContent = "Converting...";
+
+      try {
+        const res = await fetch(`${API}/convert/url`, {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: urlVal })
+        });
+
+        if (!res.ok) {
+          const msg = await res.text();
+          let errDetail;
+          try { errDetail = JSON.parse(msg).detail; } catch { errDetail = msg; }
+          throw new Error(errDetail || "Conversion failed");
+        }
+
+        // Handle File Download
+        console.log("Response OK. Getting blob...");
+        const blob = await res.blob();
+        console.log("Blob received. Size:", blob.size);
+
+        const downloadUrl = URL.createObjectURL(blob);
+
+        // Create invisible link and trigger click
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = "audio_extract.mp3";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // Clean up
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
+
+        // Premium Success Alert with Fallback
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            title: 'Download Ready!',
+            text: 'The MP3 has been downloaded to your device.',
+            icon: 'success',
+            background: '#1e1b4b',
+            color: '#f3f4f6',
+            confirmButtonColor: '#6366f1',
+            confirmButtonText: 'Great!'
+          });
+        } else {
+          // Fallback if CDN fails or blocked
+          alert("Download Ready! The MP3 has been saved to your downloads.");
+        }
+
+        input.value = ""; // Clear input on success
+
+      } catch (e) {
+        console.error("Download error:", e);
+        showStatus(e.message || "An unknown error occurred", "error");
+      } finally {
+        console.log("Resetting UI state");
+        btn.disabled = false;
+        spinner.style.display = "none";
+        btnText.textContent = "Download MP3";
+      }
+    };
+
+    // Allow Enter key to submit
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") btn.click();
+    });
+  </script>
+</body>
+
+</html>
