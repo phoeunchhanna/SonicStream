@@ -1,21 +1,16 @@
 FROM python:3.11-slim
 
-# Install system dependencies (ffmpeg is required for yt-dlp)
-RUN apt-get update && apt-get install -y ffmpeg nodejs && rm -rf /var/lib/apt/lists/*
+# Install OS dependencies: ffmpeg + node (for yt-dlp JS runtime)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg nodejs npm ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy requirements and install python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy the entire project
-COPY backend /app/backend
-COPY frontend /app/frontend
+COPY . /app
 
-# Set PYTHONPATH so python can find the 'backend' package
-ENV PYTHONPATH=/app
-
-# Run the application
-# We use the PORT environment variable if available (for Cloud Run/Heroku), default to 8000
-CMD sh -c "uvicorn backend.main:app --host 0.0.0.0 --port \${PORT:-8000}"
+# Render uses $PORT
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
