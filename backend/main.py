@@ -11,131 +11,146 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 
+
 APP_DIR = Path(__file__).resolve().parent
 OUT_DIR = APP_DIR / "outputs"
 OUT_DIR.mkdir(exist_ok=True)
 
-# --- Safety checks (optional but helpful) ---
+
+# ----------------- Check system tools -----------------
+
 def _which(cmd: str) -> Optional[str]:
     return shutil.which(cmd)
+
 
 def _require_bin(cmd: str):
     if not _which(cmd):
         raise RuntimeError(f"Missing required binary: {cmd}")
 
-# check at startup (Render logs will show clearly)
+
 try:
     _require_bin("yt-dlp")
     _require_bin("ffmpeg")
-    # node is optional if you want to rely on deno, but we require node for reliability
     _require_bin("node")
+    print("[startup] All dependencies OK")
 except Exception as e:
-    print(f"[startup] dependency warning: {e}")
+    print(f"[startup] warning: {e}")
 
-# cleanup old files at startup
+
+# ----------------- Cleanup old files -----------------
+
 try:
     for f in OUT_DIR.glob("*"):
         f.unlink(missing_ok=True)
-    print("[startup] cleaned outputs/")
+    print("[startup] outputs cleaned")
 except Exception as e:
     print(f"[startup] cleanup warning: {e}")
 
+
+# ----------------- App -----------------
+
 app = FastAPI()
 
-# If frontend & backend are same domain, CORS not needed, but keep it safe
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # change to your domain if you want stricter security
-    allow_credentials=True,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 class URLRequest(BaseModel):
     url: HttpUrl
 
+
+# ----------------- Routes -----------------
+
 @app.get("/", response_class=HTMLResponse)
 def home():
-    html_path = APP_DIR / "index.html"
-    if not html_path.exists():
-        return HTMLResponse("<h3>index.html not found</h3>", status_code=404)
-    return HTMLResponse(html_path.read_text(encoding="utf-8"))
+    html = APP_DIR / "index.html"
+
+    if not html.exists():
+        return HTMLResponse("index.html not found", status_code=404)
+
+    return HTMLResponse(html.read_text(encoding="utf-8"))
+
 
 @app.get("/health")
 def health():
-    return {"ok": True}
+    return {"status": "ok"}
 
-def _cleanup_job(job_id: str):
-    pattern = str(OUT_DIR / f"{job_id}*")
-    for path in glob.glob(pattern):
+
+def cleanup(job_id: str):
+    for f in glob.glob(str(OUT_DIR / f"{job_id}*")):
         try:
-            os.remove(path)
+            os.remove(f)
         except:
             pass
 
+
 @app.post("/convert/url")
-def convert_url(payload: URLRequest):
-    url = str(payload.url)
+def convert_url(req: URLRequest):
+
+    url = str(req.url)
     job_id = str(uuid.uuid4())
 
-    out_template = str(OUT_DIR / f"{job_id}.%(ext)s")
-    # final expected filename:
-    mp3_path = OUT_DIR / f"{job_id}.mp3"
+    out_tpl = str(OUT_DIR / f"{job_id}.%(ext)s")
+    mp3_file = OUT_DIR / f"{job_id}.mp3"
 
-    # yt-dlp command:
     cmd = [
         "yt-dlp",
         "--no-playlist",
         "--extract-audio",
         "--audio-format", "mp3",
         "--audio-quality", "0",
-        "--js-runtime", "node",  # <-- IMPORTANT for YouTube
-        "-o", out_template,
-        url,
+        "--js-runtime", "node",
+        "-o", out_tpl,
+        url
     ]
 
     try:
-        # run yt-dlp
         p = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=180,  # increase if needed
+            timeout=180
         )
 
         if p.returncode != 0:
-            _cleanup_job(job_id)
-            err = (p.stderr or p.stdout or "Unknown yt-dlp error").strip()
-            raise HTTPException(status_code=500, detail=f"Download failed: {err}")
+            cleanup(job_id)
+            raise HTTPException(500, p.stderr or p.stdout)
 
-        # Sometimes yt-dlp may output .webm/.m4a if ffmpeg conversion fails.
-        # Ensure mp3 exists:
-        if not mp3_path.exists():
-            # try to find any output file and convert manually
-            candidates = list(OUT_DIR.glob(f"{job_id}.*"))
-            if not candidates:
-                _cleanup_job(job_id)
-                raise HTTPException(status_code=500, detail="No output file generated.")
-            src = candidates[0]
-            # manual ffmpeg convert:
-            ffmpeg_cmd = ["ffmpeg", "-y", "-i", str(src), str(mp3_path)]
-            fp = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
-            if fp.returncode != 0 or not mp3_path.exists():
-                _cleanup_job(job_id)
-                raise HTTPException(status_code=500, detail=f"FFmpeg convert failed: {(fp.stderr or fp.stdout).strip()}")
+        # Check mp3
+        if not mp3_file.exists():
 
-        # return mp3 file
+            files = list(OUT_DIR.glob(f"{job_id}.*"))
+
+            if not files:
+                cleanup(job_id)
+                raise HTTPException(500, "No output file")
+
+            src = files[0]
+
+            ff = subprocess.run(
+                ["ffmpeg", "-y", "-i", src, mp3_file],
+                capture_output=True,
+                text=True
+            )
+
+            if ff.returncode != 0:
+                cleanup(job_id)
+                raise HTTPException(500, ff.stderr)
+
         return FileResponse(
-            path=str(mp3_path),
+            mp3_file,
             media_type="audio/mpeg",
-            filename="audio.mp3",
+            filename="audio.mp3"
         )
 
     except subprocess.TimeoutExpired:
-        _cleanup_job(job_id)
-        raise HTTPException(status_code=504, detail="Timeout while downloading/converting.")
-    except HTTPException:
-        raise
+        cleanup(job_id)
+        raise HTTPException(504, "Timeout")
+
     except Exception as e:
-        _cleanup_job(job_id)
-        raise HTTPException(status_code=500, detail=str(e))
+        cleanup(job_id)
+        raise HTTPException(500, str(e))

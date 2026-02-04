@@ -1,113 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>SonicStream</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0b0b2b;
-      color: #fff;
-      margin: 0;
-      display: flex;
-      min-height: 100vh;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .card {
-      width: min(520px, 92vw);
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 18px;
-      padding: 24px;
-    }
-
-    h1 {
-      margin: 0 0 8px;
-      font-size: 34px;
-      color: #9b6bff;
-      text-align: center;
-    }
-
-    p {
-      margin: 0 0 18px;
-      opacity: 0.85;
-      text-align: center;
-    }
-
-    input {
-      width: 100%;
-      padding: 14px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: rgba(0, 0, 0, 0.35);
-      color: #fff;
-      font-size: 14px;
-      outline: none;
-    }
-
-    button {
-      width: 100%;
-      margin-top: 14px;
-      height: 48px;
-      border: 0;
-      border-radius: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      color: #fff;
-      background: linear-gradient(90deg, #5e6bff, #b05cff);
-    }
-
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .msg {
-      margin-top: 14px;
-      font-size: 13px;
-      color: #ff7070;
-      white-space: pre-wrap;
-    }
-
-    .ok {
-      color: #7CFC98;
-    }
-  </style>
 </head>
 
-<body>
-  <div class="card">
-    <h1>SonicStream</h1>
-    <p>YouTube & Facebook videos to MP3 instantly.</p>
+<body style="background:#111;color:white;font-family:sans-serif;text-align:center">
 
-    <input id="url" placeholder="Paste YouTube/Facebook URL..." />
-    <button id="btn">Download MP3</button>
+  <h1>SonicStream</h1>
 
-    <div id="msg" class="msg"></div>
-  </div>
+  <input id="url" style="width:60%;padding:10px" placeholder="Paste YouTube / FB URL">
+  <br><br>
+
+  <button onclick="go()">Download MP3</button>
+
+  <p id="msg"></p>
 
   <script>
-    const btn = document.getElementById("btn");
-    const urlInput = document.getElementById("url");
-    const msg = document.getElementById("msg");
+    async function go() {
 
-    function setMsg(text, ok = false) {
-      msg.textContent = text;
-      msg.className = "msg" + (ok ? " ok" : "");
-    }
+      const url = document.getElementById("url").value;
+      const msg = document.getElementById("msg");
 
-    btn.addEventListener("click", async () => {
-      const url = urlInput.value.trim();
-      if (!url) return setMsg("Please paste a URL.");
-
-      btn.disabled = true;
-      setMsg("Downloading... Please wait.", true);
+      msg.innerText = "Downloading...";
 
       try {
+
         const res = await fetch("/convert/url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -115,33 +34,24 @@
         });
 
         if (!res.ok) {
-          let errText = "Download failed.";
-          try {
-            const data = await res.json();
-            errText = data.detail || errText;
-          } catch (e) {
-            errText = await res.text();
-          }
-          throw new Error(errText);
+          throw new Error(await res.text());
         }
 
         const blob = await res.blob();
+
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "audio.mp3";
-        document.body.appendChild(a);
         a.click();
-        a.remove();
-        URL.revokeObjectURL(a.href);
 
-        setMsg("Done! Your MP3 is downloaded.", true);
+        msg.innerText = "Done ✅";
+
       } catch (e) {
-        setMsg(String(e.message || e));
-      } finally {
-        btn.disabled = false;
+        msg.innerText = "Error: " + e.message;
       }
-    });
+    }
   </script>
+
 </body>
 
 </html>

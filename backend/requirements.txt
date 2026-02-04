@@ -1,5 +1,5 @@
-fastapi==0.115.6
-uvicorn[standard]==0.30.6
-pydantic==2.9.2
-yt-dlp==2025.1.15
-python-multipart==0.0.12
+fastapi
+uvicorn[standard]
+pydantic
+yt-dlp
+python-multipart
