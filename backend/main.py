@@ -1,8 +1,7 @@
-
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import os, uuid, subprocess, shutil, time, glob
+import os, uuid, subprocess, shutil, time, glob, tempfile
 
 from fastapi.staticfiles import StaticFiles
 
@@ -10,6 +9,13 @@ from fastapi.staticfiles import StaticFiles
 winget_path = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WinGet\Links")
 if os.path.exists(winget_path) and winget_path not in os.environ["PATH"]:
     os.environ["PATH"] += os.pathsep + winget_path
+
+# Try to use static-ffmpeg if available (useful for Vercel/Cloud)
+try:
+    import static_ffmpeg
+    static_ffmpeg.add_paths()
+except ImportError:
+    pass
 
 app = FastAPI()
 
@@ -21,8 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-OUT_DIR = "outputs"
+# Use system temp directory for outputs (Required for Serverless/Vercel)
+OUT_DIR = os.path.join(tempfile.gettempdir(), "sonicstream_outputs")
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # Startup cleanup: Ensure outputs folder is empty when server starts
