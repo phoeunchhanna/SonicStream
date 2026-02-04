@@ -1,7 +1,11 @@
 FROM python:3.11-slim
 
-# Install system dependencies (ffmpeg is required for yt-dlp)
-RUN apt-get update && apt-get install -y ffmpeg nodejs && rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+# We use curl to get a newer nodejs version because the default debian one is often too old for yt-dlp
+RUN apt-get update && apt-get install -y ffmpeg curl gnupg && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
