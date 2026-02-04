@@ -20,8 +20,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Use system temp directory for outputs (Required for Serverless/Vercel)
-OUT_DIR = os.path.join(tempfile.gettempdir(), "sonicstream_outputs")
+# Use local directory for outputs (Reverted to original)
+OUT_DIR = "outputs"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # Startup cleanup: Ensure outputs folder is empty when server starts
