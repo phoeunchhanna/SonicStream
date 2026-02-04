@@ -1,6 +1,5 @@
 FROM python:3.11-slim
 
-# Install OS dependencies: ffmpeg + node (for yt-dlp JS runtime)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg nodejs npm ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -12,5 +11,4 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY . /app
 
-# Render uses $PORT
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
