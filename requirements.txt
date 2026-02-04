@@ -3,4 +3,3 @@ uvicorn==0.30.6
 python-multipart==0.0.9
 pydantic==2.11.5
 yt-dlp
-static-ffmpeg

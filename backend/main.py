@@ -10,13 +10,6 @@ winget_path = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WinGet\Links")
 if os.path.exists(winget_path) and winget_path not in os.environ["PATH"]:
     os.environ["PATH"] += os.pathsep + winget_path
 
-# Try to use static-ffmpeg if available (useful for Vercel/Cloud)
-try:
-    import static_ffmpeg
-    static_ffmpeg.add_paths()
-except ImportError:
-    pass
-
 app = FastAPI()
 
 app.add_middleware(
