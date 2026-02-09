@@ -67,7 +67,7 @@ class URLRequest(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 def home():
-    html = APP_DIR / "index.html"
+    html = APP_DIR.parent / "frontend" / "index.html"
 
     if not html.exists():
         return HTMLResponse("index.html not found", status_code=404)

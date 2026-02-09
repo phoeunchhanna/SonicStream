@@ -1,32 +1,283 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
-  <title>SonicStream</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SonicStream | Premium Converter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --secondary: #a855f7;
+      --accent: #ec4899;
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    body {
+      background: #0f172a;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient Background Background */
+    .ambient-light {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--primary), transparent 70%);
+      top: -100px;
+      left: -100px;
+      opacity: 0.4;
+      filter: blur(80px);
+      animation: float 10s infinite alternate;
+      z-index: 0;
+    }
+
+    .ambient-light.secondary {
+      top: auto;
+      bottom: -100px;
+      left: auto;
+      right: -100px;
+      background: radial-gradient(circle, var(--accent), transparent 70%);
+      animation-delay: 5s;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translate(0, 0);
+      }
+
+      100% {
+        transform: translate(50px, 50px);
+      }
+    }
+
+    /* Glass Card */
+    .container {
+      position: relative;
+      z-index: 10;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 3rem;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    h1 {
+      font-weight: 600;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      font-size: 1rem;
+    }
+
+    /* Input Group */
+    .input-group {
+      position: relative;
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+
+    input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1rem 1rem 1rem 3rem;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Button */
+    button {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
+    }
+
+    /* Status & Toast */
+    .status-area {
+      margin-top: 2rem;
+      min-height: 24px;
+    }
+
+    .msg {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+    }
+
+    .msg.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .msg.success {
+      color: #4ade80;
+    }
+
+    .msg.error {
+      color: #f43f5e;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .btn-content {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.3);
+    }
+  </style>
 </head>
 
-<body style="background:#111;color:white;font-family:sans-serif;text-align:center">
+<body>
 
-  <h1>SonicStream</h1>
+  <div class="ambient-light"></div>
+  <div class="ambient-light secondary"></div>
 
-  <input id="url" style="width:60%;padding:10px" placeholder="Paste YouTube / FB URL">
-  <br><br>
+  <div class="container">
+    <h1>SonicStream</h1>
+    <p class="subtitle">Premium Video to MP3 Converter</p>
 
-  <button onclick="go()">Download MP3</button>
+    <div class="input-group">
+      <span class="input-icon">🔗</span>
+      <input type="text" id="url" placeholder="Paste YouTube or Facebook link here..." autocomplete="off">
+    </div>
 
-  <p id="msg"></p>
+    <button onclick="go()" id="downloadBtn">
+      <span class="btn-content">
+        <span class="spinner" id="spinner"></span>
+        <span id="btnText">Convert & Download</span>
+      </span>
+    </button>
+
+    <div class="status-area">
+      <p id="msg" class="msg"></p>
+    </div>
+
+    <div class="footer">
+      Powered by yt-dlp & ffmpeg
+    </div>
+  </div>
 
   <script>
     async function go() {
-
-      const url = document.getElementById("url").value;
+      const urlInput = document.getElementById("url");
       const msg = document.getElementById("msg");
+      const btn = document.getElementById("downloadBtn");
+      const spinner = document.getElementById("spinner");
+      const btnText = document.getElementById("btnText");
 
-      msg.innerText = "Downloading...";
+      const url = urlInput.value.trim();
+
+      if (!url) {
+        showMsg("Please enter a valid URL", "error");
+        return;
+      }
+
+      // Reset state
+      msg.classList.remove("show");
+      setLoading(true);
 
       try {
-
         const res = await fetch("/convert/url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -34,24 +285,62 @@
         });
 
         if (!res.ok) {
-          throw new Error(await res.text());
+          const errText = await res.text();
+          try {
+            // Try to parse if it's JSON error
+            const errJson = JSON.parse(errText);
+            throw new Error(errJson.detail || "Conversion missing");
+          } catch (parseErr) {
+            throw new Error(errText || "Conversion failed");
+          }
         }
 
         const blob = await res.blob();
 
+        // Trigger download
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "audio.mp3";
+        document.body.appendChild(a); // append for firefox
         a.click();
+        document.body.removeChild(a);
 
-        msg.innerText = "Done ✅";
+        showMsg("Download started! 🎧", "success");
+        urlInput.value = ""; // Clear input on success
 
       } catch (e) {
-        msg.innerText = "Error: " + e.message;
+        console.error(e);
+        let text = e.message;
+        // Clean up common ugly python errors if needed, or just show them
+        if (text.includes("http")) text = "Failed to download video. Check URL.";
+        showMsg(text, "error");
+      } finally {
+        setLoading(false);
       }
     }
-  </script>
 
+    function setLoading(isLoading) {
+      const btn = document.getElementById("downloadBtn");
+      const spinner = document.getElementById("spinner");
+      const btnText = document.getElementById("btnText");
+
+      btn.disabled = isLoading;
+      if (isLoading) {
+        spinner.style.display = "inline-block";
+        btnText.innerText = "Processing...";
+        // Change button style slightly?
+      } else {
+        spinner.style.display = "none";
+        btnText.innerText = "Convert & Download";
+      }
+    }
+
+    function showMsg(text, type) {
+      const msg = document.getElementById("msg");
+      msg.innerText = text;
+      msg.className = "msg show " + type;
+    }
+  </script>
 </body>
 
 </html>
